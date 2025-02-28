@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Pokemon Type Effectiveness Chart</title>
+<link href="pokeicon.png" rel="shortcut icon"/>
+<style type="text/css">
+.tooltip {
+  width: 100%;
+  height: 100%;
+  fill: #69c;
+  stroke: #069;
+  stroke-width: 5px;
+  opacity: 0.5
+}   
+</style>
+<script type="text/javascript">
+    <!--
+    var types = new Array(17);
+    var lines = new Array();
+    var svghead;
+    var typenames = ['NORMAL','FIRE','WATER','ELECTRIC','GRASS','ICE','FIGHTING','POISON','GROUND','FLYING','PSYCHIC','BUG','ROCK','GHOST','DRAGON','DARK','STEEL','FAIRY'];
+
+    var target_types = new Array(2);
+
+    var curr_type = 0;
+
+    function init(){
+
+        // effectiveness table
+        //
+        // I - Ineffective
+        // S - Super Effective
+        // N - Neural
+        // 0 - No Effect
+        //
+        //         Defense
+        //            | 
+        //            |
+        //            V
+
+        types[0] =  ['N','N','N','N','N','N','N','N','N','N','N','N','I','0','N','N','I','N']; // NORMAL
+        types[1] =  ['N','I','I','N','S','S','N','N','N','N','N','S','I','N','I','N','S','N']; // FIRE
+        types[2] =  ['N','S','I','N','I','N','N','N','S','N','N','N','S','N','I','N','N','N']; // WATER
+        types[3] =  ['N','N','S','I','I','N','N','N','0','S','N','N','N','N','I','N','N','N']; // ELECTRIC
+        types[4] =  ['N','I','S','N','I','N','N','I','S','I','N','I','S','N','I','N','I','N']; // GRASS
+        types[5] =  ['N','I','I','N','S','I','N','N','S','S','N','N','N','N','S','N','I','N']; // ICE
+        types[6] =  ['S','N','N','N','N','S','N','I','N','I','I','I','S','0','N','S','S','I']; // FIGHTING
+        types[7] =  ['N','N','N','N','S','N','N','I','I','N','N','N','I','I','N','N','0','S']; // POISON
+        types[8] =  ['N','S','N','S','I','N','N','S','N','0','N','I','S','N','N','N','S','N']; // GROUND
+        types[9] =  ['N','N','N','I','S','N','S','N','N','N','N','S','I','N','N','N','I','N']; // FLYING
+        types[10] = ['N','N','N','N','N','N','S','S','N','N','I','N','N','N','N','0','I','N']; // PSYCHIC
+        types[11] = ['N','I','N','N','S','N','I','I','N','I','S','N','N','I','N','S','I','I']; // BUG
+        types[12] = ['N','S','N','N','N','S','I','N','I','S','N','S','N','N','N','N','I','N']; // ROCK
+        types[13] = ['0','N','N','N','N','N','N','N','N','N','S','N','N','S','N','I','N','N']; // GHOST
+        types[14] = ['N','N','N','N','N','N','N','N','N','N','N','N','N','N','S','N','I','0']; // DRAGON
+        types[15] = ['N','N','N','N','N','N','I','N','N','N','S','N','N','S','N','I','N','I']; // DARK
+        types[16] = ['N','I','I','I','N','S','N','N','N','N','N','N','S','N','N','N','I','S']; // STEEL
+        types[17] = ['N','I','N','N','N','N','S','I','N','N','N','N','N','N','S','S','I','N']; // FAIRY
+
+        svghead = document.getElementById('svgbody');
+
+        center_circle = document.getElementById('DEFENDING')
+    }
+
+    function get_effectiveness( move_type_idx, aidx, bidx )
+    {
+        var ac = types[move_type_idx][aidx];
+        ae = 1.0;
+        if( ac == 'I' ) ae = 0.5;
+        else if( ac == 'S' ) ae = 2.0;
+        else if( ac == '0' ) ae = 0.0;
+
+        var be = 1.0;
+
+        if( bidx == 0 || bidx )
+        {
+            var bc = types[move_type_idx][bidx];
+            if( bc == 'I' ) be = 0.5;
+            else if( bc == 'S' ) be = 2.0;
+            else if( bc == '0' ) be = 0.0;
+        }
+
+        return ae*be;
+    }
+
+    function drawArrowHead(x1,y1, x2, y2, color, scale ) {
+    	const angle = Math.atan2(y1 - y2, x1 - x2);
+
+        // Length and width of the arrowhead triangle
+        const arrowLength = 10*scale;
+        const arrowWidth = 5*scale;
+
+        const midX = (parseInt(x1) + parseInt(x2)) / 2;
+        const midY = (parseInt(y1) + parseInt(y2)) / 2;
+    
+        // Calculate the points of the triangle
+        const arrowPoint1 = {
+            x: midX - arrowLength * Math.cos(angle - Math.PI / 6),
+            y: midY - arrowLength * Math.sin(angle - Math.PI / 6)
+        };
+        const arrowPoint2 = {
+            x: midX - arrowLength * Math.cos(angle + Math.PI / 6),
+            y: midY - arrowLength * Math.sin(angle + Math.PI / 6)
+        };
+
+        const arrowHead = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        const points = `${midX},${midY} ${arrowPoint1.x},${arrowPoint1.y} ${arrowPoint2.x},${arrowPoint2.y}`;
+        arrowHead.setAttribute("points", points);
+        arrowHead.setAttribute("fill", color);
+
+        lines.push(arrowHead)
+
+        svghead.insertBefore(arrowHead, svghead.firstChild );
+    }
+
+    function drawAlignedCross(x1, y1, x2, y2, crossSize, crossColor) {
+        // Calculate the midpoint
+        const midX = (parseInt(x1) + parseInt(x2)) / 2;
+        const midY = (parseInt(y1) + parseInt(y2)) / 2;
+
+        // Calculate the angle of the line
+        const angle = Math.atan2(y2 - y1, x2 - x1) + 0.785398;
+
+        // Calculate the offset for the cross lines
+        const offsetX = crossSize * Math.cos(angle);
+        const offsetY = crossSize * Math.sin(angle);
+
+        // Calculate the coordinates for the cross lines
+        const line1StartX = midX - offsetX;
+        const line1StartY = midY - offsetY;
+        const line1EndX = midX + offsetX;
+        const line1EndY = midY + offsetY;
+
+        const line2StartX = midX + offsetY;
+        const line2StartY = midY - offsetX;
+        const line2EndX = midX - offsetY;
+        const line2EndY = midY + offsetX;
+
+        // Create the SVG lines
+        const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line1.setAttribute('x1', line1StartX);
+        line1.setAttribute('y1', line1StartY);
+        line1.setAttribute('x2', line1EndX);
+        line1.setAttribute('y2', line1EndY);
+        line1.setAttribute('stroke', crossColor);
+        line1.setAttribute("stroke-width", 5);
+
+        const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line2.setAttribute('x1', line2StartX);
+        line2.setAttribute('y1', line2StartY);
+        line2.setAttribute('x2', line2EndX);
+        line2.setAttribute('y2', line2EndY);
+        line2.setAttribute('stroke', crossColor);
+        line2.setAttribute("stroke-width", 5);
+
+        lines.push(line1)
+        lines.push(line2)
+
+        svghead.insertBefore(line1, svghead.firstChild );
+        svghead.insertBefore(line2, svghead.firstChild );
+    }
+
+    function createLine(a,b,t,r) {
+        var ax = a.getAttribute('cx');
+        var ay = a.getAttribute('cy');
+        var bx = parseInt(b.getAttribute('x'))+r;
+        var by = parseInt(b.getAttribute('y'))+r;
+
+        var TemplateNode = document.getElementById('template');
+        tempNode = TemplateNode.cloneNode();
+
+        tempNode.setAttribute("x1", ax);
+        tempNode.setAttribute("y1", ay);
+        tempNode.setAttribute("x2", bx);
+        tempNode.setAttribute("y2", by);
+
+        var thickness = 6
+        var col = "black"
+        var scale = 2.5
+
+        tempNode.setAttribute("stroke-opacity", '1.0');
+        if( t == 4.0 ) {
+            col = 'lightgreen'
+            tempNode.removeAttribute("stroke-dasharray");
+            thickness *= 2
+            scale *= 2
+        }
+        else if( t == 2.0 ) {
+        	col = 'darkgreen'
+            tempNode.setAttribute("stroke", 'darkgreen');
+            tempNode.removeAttribute("stroke-dasharray");
+        }
+        else if( t == 0.0 ) {
+        	col = 'grey'
+            tempNode.setAttribute("stroke", 'grey');
+            tempNode.removeAttribute("stroke-dasharray");
+            drawAlignedCross(ax,ay,bx,by,20,'grey',thickness)
+        }   
+        else if( t == 0.5 ) {
+        	col = 'darkred'
+            tempNode.setAttribute("stroke", 'darkred');
+            tempNode.setAttribute("stroke-dasharray", '16 4');
+        }           
+        else { // t == 0.25
+        	col = '#F27572'
+            tempNode.setAttribute("stroke", '#F27572');
+            tempNode.setAttribute("stroke-dasharray", '16 4');
+            thickness *= 0.5
+            scale *= 0.75
+        }
+
+        tempNode.setAttribute("stroke", col);
+
+        if( t != 0 ) drawArrowHead(ax,ay,bx,by,col,scale)
+
+        tempNode.setAttribute("stroke-width", thickness);
+
+        lines.push(tempNode);
+        svghead.insertBefore(tempNode, svghead.firstChild );
+    }
+
+    function clearLines() {
+       while (lines.length) {
+           svghead.removeChild(lines.pop());
+       }
+    }
+
+    function showedges(evt){
+        showEdgesTarget(evt.target);
+    }
+
+    function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+      var angleInRadians = (angleInDegrees-90) * Math.PI / 180.0;
+
+      return {
+        x: centerX + (radius * Math.cos(angleInRadians)),
+        y: centerY + (radius * Math.sin(angleInRadians))
+      };
+    }
+
+    function describeArc(x, y, radius, startAngle, endAngle){
+
+        var start = polarToCartesian(x, y, radius, endAngle);
+        var end = polarToCartesian(x, y, radius, startAngle);
+
+        var largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+
+        var d = [
+            "M", start.x, start.y, 
+            "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y
+        ].join(" ");
+
+        return d;       
+    }
+
+    function showEdgesTarget(target){
+        var currtype = target.getAttribute('id');
+        var idx = 0;
+
+        center_circle_left    = document.getElementById('DEFENDING_LEFT');
+        center_circle_right    = document.getElementById('DEFENDING_RIGHT');
+
+        for(; idx < 18; idx++) {
+            if( typenames[idx] == currtype ) {
+                break;
+            }
+        }
+
+        if( curr_type == 1 && target_types[0] == idx) return;
+
+        clearLines()
+
+        if( curr_type == 0 )
+        {
+            center_circle_left.setAttribute("href",target.getAttribute('href'))
+            center_circle_right.setAttribute("href",target.getAttribute('href'))
+            target_types[0] = idx;
+        }
+        else
+        {
+            center_circle_right.setAttribute("href",target.getAttribute('href'))
+            target_types[1] = idx;
+        }
+
+        for(var j = 0; j < 18; j++) {
+
+            var eff;
+
+            if( curr_type == 0 ) eff = get_effectiveness(j, idx)
+            if( curr_type == 1 ) eff = get_effectiveness(j, target_types[0], target_types[1])
+
+            if( eff != 1.0) {
+                createLine(center_circle,document.getElementById(typenames[j]),eff,32.0);
+            }
+        }
+
+        curr_type = (curr_type + 1) % 2
+    }
+
+    //-->
+</script>
+<link id="shut-up-css" rel="stylesheet" href="data:text/css;base64,IA==">
+</head>
+<body onload="init()">
+
+<svg id="svgbody" width="866px" height="923px">
+
+<clipPath id="clip-rect-left">
+  <rect x="369" y="316" width="64" height="128" />
+</clipPath>
+
+<clipPath id="clip-rect-right">
+  <rect x="433" y="316" width="64" height="128" />
+</clipPath>
+
+<rect x="3" y="760" width="860" height="160" stroke="black" stroke-width=5 fill="#dcf2f8" rx="20" ry="20"></rect>
+<text transform="matrix(1 0 0 1 30 800)" font-family="&#39;Helvetica&#39;" font-size="18">Inner circle represents a defending Pokemon</text>
+<text transform="matrix(1 0 0 1 30 830)" font-family="&#39;Helvetica&#39;" font-size="18">Each outer circle is an attacking type</text>
+<text transform="matrix(1 0 0 1 30 860)" font-family="&#39;Helvetica&#39;" font-size="18">Click any type to set the type of the defending Pokemon</text>
+<text transform="matrix(1 0 0 1 30 890)" font-family="&#39;Helvetica&#39;" font-size="18">Click another type to set the second type of the defending Pokemon</text>
+
+<rect x="620" y="770" width="20" height="20" fill="lightgreen"></rect>
+<rect x="620" y="800" width="20" height="20" fill="darkgreen"></rect>
+<rect x="620" y="830" width="20" height="20" fill="darkred"></rect>
+<rect x="620" y="860" width="20" height="20" fill="#F27572"></rect>
+<rect x="620" y="890" width="20" height="20" fill="grey"></rect>
+<text transform="matrix(1 0 0 1 650 787)"   font-family="&#39;Helvetica&#39;" font-size="18">Super Effective! (4x)</text>
+<text transform="matrix(1 0 0 1 650 817)"  font-family="&#39;Helvetica&#39;" font-size="18">Super Effective! (2x)</text>
+<text transform="matrix(1 0 0 1 650 847)"  font-family="&#39;Helvetica&#39;" font-size="18">Not Very Effective (1/2)</text>
+<text transform="matrix(1 0 0 1 650 877)"  font-family="&#39;Helvetica&#39;" font-size="18">Not Very Effective (1/4)</text>
+<text transform="matrix(1 0 0 1 650 907)" font-family="&#39;Helvetica&#39;" font-size="18">No Effect</text>
+
+<line id="template" stroke-opacity="0.0" x1="0" y1="0" x2="100" y2="100" stroke="blue" stroke-width="4"></line>
+
+<image id="FLYING"   onclick="showedges(evt)" href="images/Flying_icon_SwSh.png"   x="294.632" y="640.244" width="64" height="64" style="cursor:pointer;"><title>Flying</title></image>
+<image id="GROUND"   onclick="showedges(evt)" href="images/Ground_icon_SwSh.png"   x="201.093" y="586.240" width="64" height="64" style="cursor:pointer;"><title>Ground</title></image>
+<image id="POISON"   onclick="showedges(evt)" href="images/Poison_icon_SwSh.png"   x="131.666" y="503.500" width="64" height="64" style="cursor:pointer;"><title>Poison</title></image>
+<image id="FIGHTING" onclick="showedges(evt)" href="images/Fighting_icon_SwSh.png" x="94.725" y="402.005" width="64" height="64" style="cursor:pointer;"><title>Fighting</title></image>
+<image id="ICE"      onclick="showedges(evt)" href="images/Ice_icon_SwSh.png"      x="94.725" y="293.995" width="64" height="64" style="cursor:pointer;"><title>Ice</title></image>
+<image id="ELECTRIC" onclick="showedges(evt)" href="images/Electric_icon_SwSh.png" x="131.666" y="192.500" width="64" height="64" style="cursor:pointer;"><title>Electric</title></image>
+<image id="GRASS"    onclick="showedges(evt)" href="images/Grass_icon_SwSh.png"    x="201.093" y="109.760" width="64" height="64" style="cursor:pointer;"><title>Grass</title></image>
+<image id="WATER"    onclick="showedges(evt)" href="images/Water_icon_SwSh.png"    x="294.632" y="55.756" width="64" height="64" style="cursor:pointer;"><title>Water</title></image>
+<image id="FIRE"     onclick="showedges(evt)" href="images/Fire_icon_SwSh.png"     x="401.000" y="37.000" width="64" height="64" style="cursor:pointer;"><title>Fire</title></image>
+<image id="NORMAL"   onclick="showedges(evt)" href="images/Normal_icon_SwSh.png"   x="507.368" y="55.756" width="64" height="64" style="cursor:pointer;"><title>Normal</title></image>
+<image id="STEEL"    onclick="showedges(evt)" href="images/Steel_icon_SwSh.png"    x="600.907" y="109.760" width="64" height="64" style="cursor:pointer;"><title>Steel</title></image>
+<image id="DARK"     onclick="showedges(evt)" href="images/Dark_icon_SwSh.png"     x="670.334" y="192.500" width="64" height="64" style="cursor:pointer;"><title>Dark</title></image>
+<image id="DRAGON"   onclick="showedges(evt)" href="images/Dragon_icon_SwSh.png"   x="707.275" y="293.995" width="64" height="64" style="cursor:pointer;"><title>Dragon</title></image>
+<image id="GHOST"    onclick="showedges(evt)" href="images/Ghost_icon_SwSh.png"    x="707.275" y="402.005" width="64" height="64" style="cursor:pointer;"><title>Ghost</title></image>
+<image id="ROCK"     onclick="showedges(evt)" href="images/Rock_icon_SwSh.png"     x="670.334" y="503.500" width="64" height="64" style="cursor:pointer;"><title>Rock</title></image>
+<image id="BUG"      onclick="showedges(evt)" href="images/Bug_icon_SwSh.png"      x="600.907" y="586.240" width="64" height="64" style="cursor:pointer;"><title>Bug</title></image>
+<image id="PSYCHIC"  onclick="showedges(evt)" href="images/Psychic_icon_SwSh.png"  x="507.368" y="640.244" width="64" height="64" style="cursor:pointer;"><title>Psychic</title></image>
+<image id="FAIRY"    onclick="showedges(evt)" href="images/Fairy_icon_SwSh.png"    x="401.000" y="659.000" width="64" height="64" style="cursor:pointer;"><title>Fairy</title></image> -->
+
+<circle id="DEFENDING" fill="#000" cx="433.00" cy="380.00" r="64"><title></title></circle>
+
+<image id="DEFENDING_LEFT" href="" x="369.000" y="316.000" width="128" clip-path="url(#clip-rect-left)"/>
+<image id="DEFENDING_RIGHT" href="" x="369.000" y="316.000" width="128" clip-path="url(#clip-rect-right)"/>
+
+</svg>
+
+</body>
+</html>
